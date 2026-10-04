@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>PriceAction Chart</title>
+<style>html,body,#chart{width:100%;height:100%;margin:0;background:#0f1115;overflow:hidden}</style>
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script src="https://unpkg.com/lightweight-charts@5.0.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+<div id="chart"></div>
+<script>
+const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+  layout: { background: { type: 'solid', color: '#0f1115' }, textColor: '#cbd5e1' },
+  grid: { vertLines: { color: '#171b22' }, horzLines: { color: '#171b22' } },
+  rightPriceScale: { borderColor: '#252b34' },
+  timeScale: { borderColor: '#252b34', timeVisible: true, secondsVisible: true }
+});
+const series = chart.addSeries(LightweightCharts.CandlestickSeries, { upColor:'#22c55e', downColor:'#ef4444', borderVisible:false, wickUpColor:'#22c55e', wickDownColor:'#ef4444' });
+const data=[]; let seq=0;
+function push(snapshot, signal){
+  const time=Math.floor(snapshot.timestamp); const p=snapshot.price; const drift=Math.sin(seq/5)*3;
+  data.push({time,open:p-drift,high:p+5,low:p-5,close:p+drift});
+  if(data.length>180) data.shift(); series.setData(data);
+  if(signal.score>=80){
+    series.setMarkers([{time,position:signal.side==='LONG'?'belowBar':'aboveBar',color:signal.side==='LONG'?'#22c55e':'#ef4444',shape:signal.side==='LONG'?'arrowUp':'arrowDown',text:signal.side+' '+signal.score.toFixed(0)}]);
+  }
+  chart.timeScale().fitContent(); seq++;
+}
+new QWebChannel(qt.webChannelTransport, channel => {
+  channel.objects.bridge.marketUpdated.connect(msg => { const obj=JSON.parse(msg); push(obj.snapshot,obj.signal); });
+});
+</script>
+</body>
+</html>
