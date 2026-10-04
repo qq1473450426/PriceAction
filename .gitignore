@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.log
+.env
+.venv/
+venv/
+.idea/
+.vscode/
+data/*.db
+data/raw/
+models/checkpoints/
